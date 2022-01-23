@@ -1,0 +1,20 @@
+{
+  "name":"SnowflakeSinkConnector",
+  "config":{
+    "connector.class":"com.snowflake.kafka.connector.SnowflakeSinkConnector",
+    "tasks.max":"1",
+    "topics":"movies",
+    "snowflake.topic2table.map": "movies:movies",
+    "buffer.count.records":"100",
+    "buffer.flush.time":"60",
+    "buffer.size.bytes":"65536",
+    "snowflake.url.name":"https://rddpreprod1.east-us-2.azure.snowflakecomputing.com:443",
+    "snowflake.user.name":"phase2_poc",
+    "snowflake.private.key": "MIIEpAIBAAKCAQEAoHh/EJCE0+aT60/dgeaYYhV97X4Kz83RO4uGIEjipJWgdeWSkGExsb5hYTvq+SrPIv3BsJjuYNDiyPaEBuduMQLcppC9Yx5oIFaMPrLbmGkDS7T4ZhBASkaarSpNrx1Pbox3iSITvxSlnnvtlIdhptqbd8GVKr5m77zYOBrJNYLJcMFogCW00SFJ89/hJBvHgQULyvloZwfQ+yLuTRN2cKnf4wPUWwYBK5OkIBLGw5dTA/otf7PysKdvzNon9izk4FY4u4+jNgyLg4/q3aKcKKp9uYTW/MCYCoK9BXoJEn5eiu9c79P72Us19jNe4v8ZToJN7io4Z8O1qYVgLvioiwIDAQABAoIBAQCYj9amBe/ykd4Bss1yKayoW6x8dP+Mby3EQbMD0KeBOCv0yo0cLPuU894bFl8gAt4pcz2JSuwfKZji3NPKyI5PlFv5E9Sqfocab44oMd1qujQC7wvV5Q9qTlPR3E089k3FWVBwFPDXEqce1M2cD1X8zwtNwMKzf4/Xzx91v6mZ77t1WllMbzec2By3LSOWvjfnB8h3hWXaMDrT7hYLrk11oMeFTu5aR8C4yfeeZTBn0xpsWQVOZxy2CEAc3akvOtKJoOgx6fJVT3ehij7C6X+HrhW9OuyMam8i1CHFJ0PwYYuYHWyygBaHLGfJ8a0iHtJfNz22LzQPERTZCBjeUdgRAoGBAMrVYzx79BzFN+4JVhzNtI5rf1olIXzmKPZwr6EUe2nk3GV9hvhpbqyZmhedBgvELsHfgbUMOX9Vb/xQ4adZ6vexnm0LL2O49ApqgilpluiHPchAVeITEMSGbGqfyES7teqYF0sEaHir2CalhbSPac9Efdm9XMCFOHc3qtvJ0c+DAoGBAMqIdeFoWV2nUuR6wwwQOCrqkkGaSDq4eRoaAAUrAD+1MEAW9exLoOQpmmPWqY06Ewb1DOcCkNWS6xHsSWb4/ZZwInhhx8HU5BcKT/D4OajegpTxj6bFvW+g6rByssCt+s4UA2z23h66LjTjPdfNYqjyD6zMYvp0LP/LhZUxnyxZAoGAHSnnVdgAtm5I52niPsv47Q1Zx01Vbk7tjtmO9xspz4T/h3wv/uGx7xE6zbBfISv5CRko3i4+yicvrdi3SUeteCXKwKT+EFmUhTbhNjEfaJmhcXyGnLXfEFK/nekRc4iF1JA/sSKWHtuefZgJDHgeX5Xafocyod/FyaZwY5+2Eh8CgYEAunT9CYLW2zjDQKOgU8fO3fvMoGbYXm8c1qHfKOLYvM4jWK2KxHsv6T4/6/Bhcipn//y0XyzmiClVDtAZF5rdY5Vitq9WhyVmw6tzw2XTN5t6XoMxfBkJ+O4NglpmJKtHflfAe52fCmzfQ0N92OI2FVGciroz2V4BW5FULvFbGCkCgYBnROcYsOtd604IrNugfAxniIIiPrye1ykG4nWMQr85l/Fxkn5FpITLq0wFNsRhYOtJCq6krxD0984T51CXZGvn6rmScrDeXIg6Ll2zcAbNC4VWBDfOF3E77kbwYKDKPCTZEOEWxkUUWTbhwD/A6YQl1hRVtDD0NJy6IFsBJJH83w==",
+    "snowflake.database.name":"PHASE2SANDBOX",
+    "snowflake.schema.name":"PUBLIC",
+    "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+    "value.converter":"com.snowflake.kafka.connector.records.SnowflakeAvroConverter",
+    "value.converter.schema.registry.url":"http://schema-registry:38081"
+  }
+}

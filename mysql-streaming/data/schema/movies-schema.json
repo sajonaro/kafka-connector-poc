@@ -1,0 +1,3 @@
+{
+    "schema": "{\"type\":\"record\",\"name\":\"movie\",\"namespace\":\"com.temp.avro.model\",\"fields\":[{\"name\":\"movie_id\",\"type\":\"int\"},{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"release_year\",\"type\":\"int\"},{\"name\":\"country\",\"type\":\"string\"},{\"name\":\"genres\",\"type\":\"string\"},{\"name\":\"actors\",\"type\":\"string\"},{\"name\":\"directors\",\"type\":\"string\"},{\"name\":\"composers\",\"type\":\"string\"},{\"name\":\"screenwriters\",\"type\":\"string\"},{\"name\":\"cinematographer\",\"type\":\"string\"},{\"name\":\"production_companies\",\"type\":\"string\"}]}"
+}

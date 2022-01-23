@@ -1,0 +1,1 @@
+  curl -X POST -H "Content-Type: application/json" localhost:8084/connectors -d @connect-config.json

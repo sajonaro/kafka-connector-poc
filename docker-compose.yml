@@ -1,0 +1,218 @@
+version: '3.5'
+
+services:
+  
+  mysql:
+    # *-----------------------------*
+    # To connect to the DB: 
+    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    # *-----------------------------*
+    image: debezium/example-mysql:1.2
+    container_name: mysql
+    networks: 
+      - kafka-net
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: debezium
+      MYSQL_USER: mysqluser
+      MYSQL_PASSWORD: mysqlpw
+    volumes:
+      - ./mysql-streaming/data/movies.sql:/docker-entrypoint-initdb.d/z99_dump.sql
+
+  connect-debezium:
+    image: debezium/connect
+    container_name: debezium
+    networks: 
+      - kafka-net
+    hostname: debezium  
+    depends_on:
+      - mysql
+      - schema-registry
+    ports:
+      - 8083:8083
+    environment:
+      BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092
+      GROUP_ID: connect-debezium
+      CONFIG_STORAGE_TOPIC: docker-connect-debezium-configs
+      OFFSET_STORAGE_TOPIC: docker-connect-debezium-offsets
+      STATUS_STORAGE_TOPIC: docker-connect-debezium-status
+      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:38081
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:38081
+    volumes:
+      - ./mysql-streaming/scripts:/scripts
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:4.1.1
+    networks: 
+    - kafka-net     
+    hostname: zookeeper
+    container_name: zookeeper
+    ports: 
+    - "32181:32181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 32181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+
+  kafka1:
+    image: confluentinc/cp-kafka
+    networks: 
+    - kafka-net
+    hostname: kafka1
+    container_name: broker1
+    ports: 
+    - "29092:29092"
+    depends_on:
+    - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  kafka2:
+    image: confluentinc/cp-kafka
+    networks: 
+    - kafka-net
+    hostname: kafka2
+    container_name: broker2
+    ports: 
+    - "29093:29093"
+    depends_on:
+    - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:32181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:4.1.1
+    networks: 
+    - kafka-net
+    hostname: schema-registry
+    container_name: schema-registry
+    ports:
+    - "38081:38081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:32181
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://schema-registry:38081
+      SCHEMA_REGISTRY_DEBUG: "true"
+
+  kafka-rest:
+    image: confluentinc/cp-kafka-rest:4.1.1
+    networks: 
+    - kafka-net
+    hostname: kafka-rest
+    container_name: kafka-rest-endpoint
+    ports:
+    - "38082:38082"
+    depends_on:
+    - schema-registry
+    environment:
+      KAFKA_REST_ZOOKEEPER_CONNECT: zookeeper:32181
+      KAFKA_REST_SCHEMA_REGISTRY_URL: schema-registry:38081
+      KAFKA_REST_HOST_NAME: kafka-rest
+      KAFKA_REST_LISTENERS: http://kafka-rest:38082
+      KAFKA_REST_ACCESS_CONTROL_ALLOW_ORIGIN: '*'
+      KAFKA_REST_ACCESS_CONTROL_ALLOW_METHODS: 'GET,POST,PUT,DELETE,OPTIONS,HEAD'
+
+  kafka-ui:
+    image: landoop/kafka-topics-ui
+    networks: 
+    - kafka-net
+    container_name: kafka-ui
+    ports:
+    - "8000:8000"
+    environment: 
+      KAFKA_REST_PROXY_URL: http://host.docker.internal:38082
+
+  sf-connect:
+    build:
+      context: ./apache-sf-connector
+      dockerfile: Dockerfile
+    networks: 
+    - kafka-net
+    hostname: connect
+    container_name: connect
+    depends_on:
+      - zookeeper
+      - schema-registry
+    ports:
+      - "8084:8084"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_REST_PORT: 8084
+      CONNECT_GROUP_ID: connect-snowflake
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: schema-registry:38081
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_ZOOKEEPER_CONNECT: zookeeper:32181
+      # Assumes image is based on confluentinc/kafka-connect-datagen:latest which is pulling 5.1.1 Connect image
+      # CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.2.jar
+      CLASSPATH: /usr/share/java/plugins
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/java/plugins,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+    command: /etc/confluent/docker/run
+  
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:latest
+    networks: 
+    - kafka-net
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - zookeeper
+      - schema-registry
+     # - ksqldb-server
+    ports:
+      - "9021:9021"
+    environment:
+      #CONTROL_CENTER_KSQL_URL: ksqldb-server:8088
+      #CONTROL_CENTER_KSQL_ADVERTISED_URL: ksqldb-server:8088
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092 
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: zookeeper:32181
+      CONTROL_CENTER_CONNECT_CLUSTERS: connect:8084,debezium:8083
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: schema-registry:38081
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021  
+     
+  producer:
+    build: 
+      context: .\producer
+      dockerfile: Dockerfile
+    networks: 
+    - kafka-net
+    container_name: producer
+    command: node push.js --server kafka1:9092 --topic topic1 --message test-message
+
+networks:
+  kafka-net:
+    driver: bridge

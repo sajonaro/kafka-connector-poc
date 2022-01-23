@@ -1,0 +1,25 @@
+to run this PoC one needs to install docker desktop (https://docs.docker.com/desktop/windows/install/)
+
+to create containers with services and configure them run:
+./start.sh
+
+to stop the services run:
+./stop_and_destroy.sh
+
+
+
+to check source data :
+download any mysql compatible dashboard ( e.g. https://www.mysql.com/products/workbench/)
+connect to cluster:  localhost:3306
+user:  mysqluser
+pwd : mysqlpw
+(details in docker-compose file, service name mysql)
+
+
+to visualize kafka cluster:
+localhost:8000
+
+
+snowflake details:
+account, db, schema, role
+apache-sf-connector/connect-config.json

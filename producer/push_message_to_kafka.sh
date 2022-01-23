@@ -1,0 +1,1 @@
+docker-compose run -d producer node push.js --server kafka:29092 --topic topic1 --message msg2

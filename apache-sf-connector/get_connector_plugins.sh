@@ -1,0 +1,1 @@
+curl -s "localhost:8084/connector-plugins"|jq '.'
